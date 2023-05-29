@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+from database import *
 
 origins = ['https://localhost:3000']
 
@@ -14,26 +16,39 @@ app.add_middleware(
 )
 
 @app.get('/data')
-def get_all():
-    return 1
+async def get_all():
+    resp = await fetch_all_record()
+    return resp
 
 
-@app.get('/data/{id}')
-async def get(id):
-    return 1
+@app.get('/data/{title}', response_model=Todo)
+async def get(title):
+    resp = await fetch_one_record(title)
+    if resp:
+        return resp
+    raise HTTPException(404, f'There is no such title: {title}')
 
 
-@app.post('/data/create')
-async def create():
-    return 1
+@app.post('/data/create', response_model=Todo)
+async def create(todo: Todo):
+    resp = await create_record(todo.dict())
+    if resp:
+        return resp
+    raise HTTPException(400, f'Somethin went wrong')
 
 
-@app.put('/data/update/{id}')
-async def update(id):
-    return 1
+@app.put('/data/update/{title}', response_model=Todo)
+async def update(title: str, desc: str):
+    resp = await update_record(title, desc)
+    if resp:
+        return resp
+    raise HTTPException(404, f'There is no such title: {title}')
 
 
-@app.delete('/data/delete/{id}')
-async def delete(id):
-    return 1
+@app.delete('/data/delete/{title}')
+async def delete(title):
+    resp = await remove_record(title)
+    if resp:
+        return "Item was deleted"
+    raise HTTPException(404, f'There is no such title: {title}')
 
